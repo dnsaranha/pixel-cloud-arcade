@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import { JSNES } from "jsnes";
+import JSNES from "jsnes";
 
 interface RealEmulatorProps {
   romUrl?: string;
