@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from "react";
-import JSNES from "jsnes";
+import * as JSNES from "jsnes";
 
 interface RealEmulatorProps {
   romUrl?: string;
@@ -35,35 +35,42 @@ const RealEmulator = ({ romUrl, onLoad, onError }: RealEmulatorProps) => {
       console.warn('Web Audio API não suportado');
     }
 
-    // Configurar NES
-    nesRef.current = new JSNES({
-      onFrame: (frameBuffer: number[]) => {
-        if (!frameBufferRef.current || !ctx) return;
-        
-        const imageData = frameBufferRef.current;
-        for (let i = 0; i < frameBuffer.length; i++) {
-          const pixel = frameBuffer[i];
-          imageData.data[i * 4] = (pixel >> 16) & 0xff;     // R
-          imageData.data[i * 4 + 1] = (pixel >> 8) & 0xff; // G
-          imageData.data[i * 4 + 2] = pixel & 0xff;        // B
-          imageData.data[i * 4 + 3] = 255;                 // A
+    // Configurar NES - usando JSNES.NES em vez de new JSNES()
+    console.log('JSNES object:', JSNES);
+    try {
+      nesRef.current = new (JSNES as any).NES({
+        onFrame: (frameBuffer: number[]) => {
+          if (!frameBufferRef.current || !ctx) return;
+          
+          const imageData = frameBufferRef.current;
+          for (let i = 0; i < frameBuffer.length; i++) {
+            const pixel = frameBuffer[i];
+            imageData.data[i * 4] = (pixel >> 16) & 0xff;     // R
+            imageData.data[i * 4 + 1] = (pixel >> 8) & 0xff; // G
+            imageData.data[i * 4 + 2] = pixel & 0xff;        // B
+            imageData.data[i * 4 + 3] = 255;                 // A
+          }
+          ctx.putImageData(imageData, 0, 0);
+        },
+        onAudioSample: (left: number, right: number) => {
+          // Implementação básica de áudio
+          if (audioContextRef.current && audioContextRef.current.state === 'running') {
+            // Aqui você pode implementar um buffer de áudio mais sofisticado
+          }
         }
-        ctx.putImageData(imageData, 0, 0);
-      },
-      onAudioSample: (left: number, right: number) => {
-        // Implementação básica de áudio
-        if (audioContextRef.current && audioContextRef.current.state === 'running') {
-          // Aqui você pode implementar um buffer de áudio mais sofisticado
-        }
-      }
-    });
+      });
+      console.log('NES emulator initialized:', nesRef.current);
+    } catch (error) {
+      console.error('Error initializing NES emulator:', error);
+      onError?.('Erro ao inicializar emulador NES');
+    }
 
     return () => {
       if (audioContextRef.current) {
         audioContextRef.current.close();
       }
     };
-  }, []);
+  }, [onError]);
 
   useEffect(() => {
     if (romUrl && nesRef.current) {
