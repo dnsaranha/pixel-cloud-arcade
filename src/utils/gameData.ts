@@ -8,6 +8,7 @@ export interface Game {
   rating: number;
   year: number;
   genre: string;
+  hasRealEmulation?: boolean;
 }
 
 const wiiGames: Game[] = [
@@ -19,7 +20,8 @@ const wiiGames: Game[] = [
     image: "https://images.unsplash.com/photo-1511512578047-411b9d6e3e8b?w=400&h=300&fit=crop",
     rating: 4.8,
     year: 2006,
-    genre: "Esportes"
+    genre: "Esportes",
+    hasRealEmulation: false
   },
   {
     id: "mario-kart-wii",
@@ -29,7 +31,8 @@ const wiiGames: Game[] = [
     image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop",
     rating: 4.9,
     year: 2008,
-    genre: "Corrida"
+    genre: "Corrida",
+    hasRealEmulation: false
   },
   {
     id: "super-mario-galaxy",
@@ -39,7 +42,8 @@ const wiiGames: Game[] = [
     image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400&h=300&fit=crop",
     rating: 4.9,
     year: 2007,
-    genre: "Plataforma"
+    genre: "Plataforma",
+    hasRealEmulation: false
   },
   {
     id: "wii-play",
@@ -49,123 +53,135 @@ const wiiGames: Game[] = [
     image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=400&h=300&fit=crop",
     rating: 4.2,
     year: 2006,
-    genre: "Party"
+    genre: "Party",
+    hasRealEmulation: false
   }
 ];
 
 const nintendoGames: Game[] = [
   {
-    id: "super-mario-bros",
-    title: "Super Mario Bros",
+    id: "test-rom",
+    title: "NES Test ROM",
     console: "Nintendo NES",
-    description: "O jogo que definiu os jogos de plataforma e salvou a indústria dos videogames.",
+    description: "ROM de teste para verificar funcionalidade do emulador NES real.",
+    image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400&h=300&fit=crop",
+    rating: 4.0,
+    year: 2023,
+    genre: "Teste",
+    hasRealEmulation: true
+  },
+  {
+    id: "homebrew-platformer",
+    title: "Homebrew Platformer",
+    console: "Nintendo NES",
+    description: "Jogo de plataforma criado pela comunidade homebrew com emulação real.",
+    image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400&h=300&fit=crop",
+    rating: 4.2,
+    year: 2023,
+    genre: "Plataforma",
+    hasRealEmulation: true
+  },
+  {
+    id: "super-mario-bros",
+    title: "Super Mario Bros (Demo)",
+    console: "Nintendo NES",
+    description: "Demo do clássico jogo que definiu os jogos de plataforma.",
     image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400&h=300&fit=crop",
     rating: 4.9,
     year: 1985,
-    genre: "Plataforma"
+    genre: "Plataforma",
+    hasRealEmulation: false
   },
   {
     id: "zelda-link-awakening",
-    title: "The Legend of Zelda",
+    title: "The Legend of Zelda (Demo)",
     console: "Nintendo NES",
-    description: "A aventura épica que deu início à lendária série Zelda.",
+    description: "Demo da aventura épica que deu início à lendária série Zelda.",
     image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=300&fit=crop",
     rating: 4.8,
     year: 1986,
-    genre: "Aventura"
+    genre: "Aventura",
+    hasRealEmulation: false
   },
   {
     id: "metroid",
-    title: "Metroid",
+    title: "Metroid (Demo)",
     console: "Nintendo NES",
-    description: "Explore o planeta Zebes como Samus Aran nesta aventura sci-fi atmosférica.",
+    description: "Demo da exploração do planeta Zebes como Samus Aran.",
     image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop",
     rating: 4.7,
     year: 1986,
-    genre: "Ação/Aventura"
+    genre: "Ação/Aventura",
+    hasRealEmulation: false
   },
   {
     id: "donkey-kong",
-    title: "Donkey Kong",
+    title: "Donkey Kong (Demo)",
     console: "Nintendo NES",
-    description: "O clássico arcade onde Mario (Jumpman) enfrenta o gigante Donkey Kong.",
+    description: "Demo do clássico arcade onde Mario enfrenta o gigante Donkey Kong.",
     image: "https://images.unsplash.com/photo-1555864326-5cf22ef123cf?w=400&h=300&fit=crop",
     rating: 4.5,
     year: 1981,
-    genre: "Arcade"
-  },
-  {
-    id: "super-mario-world",
-    title: "Super Mario World",
-    console: "Nintendo SNES",
-    description: "Mario e Yoshi se aventuram na Dinosaur Land em uma das melhores sequências da série.",
-    image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400&h=300&fit=crop",
-    rating: 4.9,
-    year: 1990,
-    genre: "Plataforma"
-  },
-  {
-    id: "zelda-link-to-past",
-    title: "A Link to the Past",
-    console: "Nintendo SNES",
-    description: "Link deve salvar Hyrule em uma aventura que se passa em dois mundos paralelos.",
-    image: "https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=300&fit=crop",
-    rating: 4.9,
-    year: 1991,
-    genre: "Aventura"
+    genre: "Arcade",
+    hasRealEmulation: false
   }
 ];
 
 const segaGames: Game[] = [
   {
     id: "sonic-hedgehog",
-    title: "Sonic the Hedgehog",
+    title: "Sonic the Hedgehog (Demo)",
     console: "Sega Genesis",
-    description: "O ouriço azul mais rápido do mundo em sua primeira aventura revolucionária.",
+    description: "Demo do ouriço azul mais rápido do mundo em sua primeira aventura.",
     image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=400&h=300&fit=crop",
     rating: 4.8,
     year: 1991,
-    genre: "Plataforma"
+    genre: "Plataforma",
+    hasRealEmulation: false
   },
   {
     id: "sonic-2",
-    title: "Sonic the Hedgehog 2",
+    title: "Sonic the Hedgehog 2 (Demo)",
     console: "Sega Genesis",
-    description: "Sonic e Tails se unem para derrotar Dr. Robotnik em uma aventura ainda mais rápida.",
+    description: "Demo de Sonic e Tails se unindo para derrotar Dr. Robotnik.",
     image: "https://images.unsplash.com/photo-1566576721346-d4a3b4eaeb55?w=400&h=300&fit=crop",
     rating: 4.9,
     year: 1992,
-    genre: "Plataforma"
+    genre: "Plataforma",
+    hasRealEmulation: false
   },
   {
     id: "streets-of-rage",
-    title: "Streets of Rage",
+    title: "Streets of Rage (Demo)",
     console: "Sega Genesis",
-    description: "Beat 'em up clássico onde você luta para limpar as ruas da cidade do crime.",
+    description: "Demo do beat 'em up clássico de limpeza das ruas da cidade.",
     image: "https://images.unsplash.com/photo-1511512578047-411b9d6e3e8b?w=400&h=300&fit=crop",
     rating: 4.6,
     year: 1991,
-    genre: "Beat 'em up"
+    genre: "Beat 'em up",
+    hasRealEmulation: false
   },
   {
     id: "golden-axe",
-    title: "Golden Axe",
+    title: "Golden Axe (Demo)",
     console: "Sega Genesis",
-    description: "Aventura medieval de fantasia com guerreiros lutando contra o malvado Death Adder.",
+    description: "Demo da aventura medieval de fantasia contra Death Adder.",
     image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop",
     rating: 4.5,
     year: 1989,
-    genre: "Beat 'em up"
+    genre: "Beat 'em up",
+    hasRealEmulation: false
   },
   {
     id: "altered-beast",
-    title: "Altered Beast",
+    title: "Altered Beast (Demo)",
     console: "Sega Genesis",
-    description: "Transforme-se em bestas poderosas para salvar Athena do submundo.",
+    description: "Demo da transformação em bestas poderosas para salvar Athena.",
     image: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=300&fit=crop",
     rating: 4.3,
     year: 1988,
-    genre: "Beat 'em up"
+    genre: "Beat 'em up",
+    hasRealEmulation: false
   }
 ];
 
