@@ -1,4 +1,3 @@
-
 export interface Game {
   id: string;
   title: string;
@@ -59,6 +58,17 @@ const wiiGames: Game[] = [
 ];
 
 const nintendoGames: Game[] = [
+  {
+    id: "contra",
+    title: "Contra",
+    console: "Nintendo NES",
+    description: "O clássico jogo de ação cooperativo com soldados enfrentando alienígenas. Emulação real disponível!",
+    image: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=400&h=300&fit=crop",
+    rating: 4.8,
+    year: 1987,
+    genre: "Ação",
+    hasRealEmulation: true
+  },
   {
     id: "test-rom",
     title: "NES Test ROM",
