@@ -3,11 +3,11 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 
 interface VirtualControlsProps {
-  console: string;
+  gameConsole: string;
   isFullscreen?: boolean;
 }
 
-const VirtualControls = ({ console, isFullscreen = false }: VirtualControlsProps) => {
+const VirtualControls = ({ gameConsole, isFullscreen = false }: VirtualControlsProps) => {
   const [pressedButtons, setPressedButtons] = useState<Set<string>>(new Set());
 
   const handleButtonPress = (button: string) => {

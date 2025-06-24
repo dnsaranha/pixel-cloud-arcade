@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Maximize, Volume2, Settings, Pause, Play, Minimize } from "lucide-react";
@@ -163,7 +162,7 @@ const GamePlayer = ({ game, onBack }: GamePlayerProps) => {
                 {/* Controles virtuais com transparência */}
                 <div className="absolute bottom-4 left-4 right-4 md:hidden">
                   <div className="bg-black/30 backdrop-blur-sm rounded-xl p-4">
-                    <VirtualControls console={game.console} isFullscreen={true} />
+                    <VirtualControls gameConsole={game.console} isFullscreen={true} />
                   </div>
                 </div>
               </>
@@ -178,7 +177,7 @@ const GamePlayer = ({ game, onBack }: GamePlayerProps) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <VirtualControls console={game.console} isFullscreen={false} />
+            <VirtualControls gameConsole={game.console} isFullscreen={false} />
           </motion.div>
         )}
       </div>
