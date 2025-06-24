@@ -39,10 +39,10 @@ const GameEmulator = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-red-500 to-pink-600 rounded-lg flex items-center justify-center">
                 🎮
               </div>
-              RetroCloud Gaming
+              NES Emulator
             </h1>
             {(selectedConsole || isPlaying) && (
               <button
@@ -61,11 +61,11 @@ const GameEmulator = () => {
         {!selectedConsole && (
           <div className="text-center mb-12">
             <h2 className="text-5xl font-bold text-white mb-4">
-              Jogos Clássicos na Nuvem
+              Emulador Nintendo NES
             </h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              Reviva os clássicos do Wii, Nintendo e Sega diretamente no seu navegador. 
-              Sem downloads, sem instalação - apenas diversão instantânea!
+              Jogue clássicos do Nintendo NES diretamente no navegador. 
+              Adicione seus próprios jogos através do GitHub!
             </p>
           </div>
         )}
