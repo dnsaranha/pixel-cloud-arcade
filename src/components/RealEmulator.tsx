@@ -1,18 +1,26 @@
 
 import { useEffect, useRef, useState } from "react";
+import { NES } from "jsnes";
 
 interface RealEmulatorProps {
   romUrl?: string;
   onLoad?: () => void;
   onError?: (error: string) => void;
   isFullscreen?: boolean;
+  onButtonPress?: (button: string, pressed: boolean) => void;
 }
 
-const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false }: RealEmulatorProps) => {
+const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false, onButtonPress }: RealEmulatorProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const nesRef = useRef<NES | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const animationRef = useRef<number>();
+
+  // Buffer para o áudio
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioBufferRef = useRef<AudioBuffer | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -25,10 +33,23 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false }: RealEmu
     canvas.width = 256;
     canvas.height = 240;
 
+    // Inicializar contexto de áudio
+    try {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    } catch (e) {
+      console.log('Áudio não disponível');
+    }
+
     // Simular carregamento da ROM
     if (romUrl) {
       loadROM(romUrl);
     }
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
   }, [romUrl]);
 
   const loadROM = async (url: string) => {
@@ -36,70 +57,63 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false }: RealEmu
       setError(null);
       console.log(`Carregando ROM: ${url}`);
       
-      // Verificar se o arquivo existe
       const response = await fetch(url);
-      if (response.ok) {
-        console.log(`ROM encontrada e carregada: ${url}`);
-        setIsLoaded(true);
-        onLoad?.();
-        simulateGameScreen(url);
-      } else {
+      if (!response.ok) {
         throw new Error(`ROM não encontrada: ${url}`);
       }
       
+      const romData = await response.arrayBuffer();
+      const romArray = new Uint8Array(romData);
+      
+      // Inicializar o emulador NES
+      nesRef.current = new NES({
+        onFrame: (frameBuffer: number[]) => {
+          drawFrame(frameBuffer);
+        },
+        onAudioSample: (left: number, right: number) => {
+          // Implementar áudio se necessário
+        },
+        onStatusUpdate: (status: string) => {
+          console.log('NES Status:', status);
+        }
+      });
+
+      // Carregar a ROM
+      nesRef.current.loadROM(romArray);
+      
+      console.log(`ROM carregada com sucesso: ${url}`);
+      setIsLoaded(true);
+      onLoad?.();
+      
     } catch (error) {
       console.error('Erro ao carregar ROM:', error);
-      const errorMessage = `Erro: ROM não encontrada em ${url}. Verifique se o arquivo existe em public/roms/`;
+      const errorMessage = `Erro: ${error}`;
       setError(errorMessage);
       onError?.(errorMessage);
-      
-      // Mostrar tela de erro
       showErrorScreen();
     }
   };
 
-  const simulateGameScreen = (romUrl: string) => {
+  const drawFrame = (frameBuffer: number[]) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!ctx || !canvas) return;
 
-    // Simular tela de jogo baseada no ROM
-    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    const imageData = ctx.createImageData(256, 240);
     
-    if (romUrl.includes('Contra')) {
-      gradient.addColorStop(0, '#2a1810');
-      gradient.addColorStop(0.5, '#4a2818');
-      gradient.addColorStop(1, '#6a3820');
-    } else if (romUrl.includes('Donkey')) {
-      gradient.addColorStop(0, '#1a3a1a');
-      gradient.addColorStop(0.5, '#2a5a2a');
-      gradient.addColorStop(1, '#3a7a3a');
-    } else {
-      gradient.addColorStop(0, '#1a1a2e');
-      gradient.addColorStop(0.5, '#16213e');
-      gradient.addColorStop(1, '#0f3460');
+    for (let i = 0; i < frameBuffer.length; i++) {
+      const pixel = frameBuffer[i];
+      const r = (pixel >> 16) & 0xFF;
+      const g = (pixel >> 8) & 0xFF;
+      const b = pixel & 0xFF;
+      
+      imageData.data[i * 4] = r;
+      imageData.data[i * 4 + 1] = g;
+      imageData.data[i * 4 + 2] = b;
+      imageData.data[i * 4 + 3] = 255;
     }
     
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Simular pixels do jogo
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '14px monospace';
-    ctx.textAlign = 'center';
-    
-    const gameName = romUrl.includes('Contra') ? 'CONTRA' : 
-                    romUrl.includes('Donkey') ? 'DK COUNTRY' : 'JOGO';
-    
-    ctx.fillText(`${gameName} - ROM CARREGADA`, canvas.width / 2, canvas.height / 2 - 30);
-    ctx.fillText('Simulação Visual', canvas.width / 2, canvas.height / 2);
-    ctx.fillText('Pressione os botões', canvas.width / 2, canvas.height / 2 + 30);
-    
-    // Simular alguns "pixels" de jogo
-    for (let i = 0; i < 40; i++) {
-      ctx.fillStyle = `hsl(${Math.random() * 360}, 60%, 80%)`;
-      ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
-    }
+    ctx.putImageData(imageData, 0, 0);
   };
 
   const showErrorScreen = () => {
@@ -118,15 +132,62 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false }: RealEmu
   };
 
   const startEmulation = () => {
-    if (!isLoaded) return;
+    if (!isLoaded || !nesRef.current) return;
+    
     setIsRunning(true);
-    console.log('Simulação iniciada');
+    console.log('Emulação iniciada');
+    
+    const gameLoop = () => {
+      if (nesRef.current && isRunning) {
+        nesRef.current.frame();
+        animationRef.current = requestAnimationFrame(gameLoop);
+      }
+    };
+    
+    gameLoop();
   };
 
   const stopEmulation = () => {
     setIsRunning(false);
-    console.log('Simulação pausada');
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+    console.log('Emulação pausada');
   };
+
+  // Função para processar entrada dos controles
+  const handleButtonPress = (button: string, pressed: boolean) => {
+    if (!nesRef.current) return;
+
+    const buttonMap: { [key: string]: number } = {
+      'A': 0,
+      'B': 1,
+      'select': 2,
+      'start': 3,
+      'up': 4,
+      'down': 5,
+      'left': 6,
+      'right': 7
+    };
+
+    const buttonId = buttonMap[button];
+    if (buttonId !== undefined) {
+      if (pressed) {
+        nesRef.current.buttonDown(1, buttonId);
+      } else {
+        nesRef.current.buttonUp(1, buttonId);
+      }
+    }
+
+    onButtonPress?.(button, pressed);
+  };
+
+  // Expor a função para o componente pai
+  useEffect(() => {
+    if (onButtonPress) {
+      (window as any).handleNESButtonPress = handleButtonPress;
+    }
+  }, [onButtonPress]);
 
   const canvasClass = isFullscreen 
     ? "w-full h-full object-contain bg-black" 
@@ -149,13 +210,13 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false }: RealEmu
             </div>
           )}
           
-          {!error && (
+          {!error && isLoaded && (
             <div className="text-center text-white bg-green-600/20 p-4 rounded-lg border border-green-500">
-              <h3 className="font-semibold mb-2">ROM Encontrada!</h3>
+              <h3 className="font-semibold mb-2">Emulador NES Ativo!</h3>
               <div className="text-sm space-y-1">
-                <p>• Arquivo carregado com sucesso</p>
-                <p>• Emulação visual funcionando</p>
-                <p>• Adicione mais ROMs em public/roms/</p>
+                <p>• ROM carregada com sucesso</p>
+                <p>• Use os controles para jogar</p>
+                <p>• Pressione Iniciar para começar</p>
               </div>
             </div>
           )}
@@ -167,14 +228,14 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false }: RealEmu
                 disabled={!isLoaded}
                 className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-semibold"
               >
-                {isLoaded ? 'Iniciar Simulação' : 'Carregando...'}
+                {isLoaded ? 'Iniciar Jogo' : 'Carregando...'}
               </button>
             ) : (
               <button
                 onClick={stopEmulation}
                 className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold"
               >
-                Pausar Simulação
+                Pausar Jogo
               </button>
             )}
           </div>

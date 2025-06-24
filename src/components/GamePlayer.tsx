@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Maximize, Volume2, Settings, Pause, Play, Minimize } from "lucide-react";
@@ -64,6 +65,13 @@ const GamePlayer = ({ game, onBack }: GamePlayerProps) => {
     setIsEmulatorLoaded(false);
   };
 
+  const handleButtonPress = (button: string, pressed: boolean) => {
+    // A função está disponível globalmente quando o emulador está carregado
+    if ((window as any).handleNESButtonPress) {
+      (window as any).handleNESButtonPress(button, pressed);
+    }
+  };
+
   const fullscreenClass = isFullscreen ? "fixed inset-0 z-50 bg-black" : "max-w-7xl mx-auto";
 
   return (
@@ -94,12 +102,6 @@ const GamePlayer = ({ game, onBack }: GamePlayerProps) => {
             </div>
             
             <div className="flex items-center gap-2">
-              <button
-                onClick={togglePlayPause}
-                className="bg-blue-600 hover:bg-blue-700 p-3 rounded-full transition-colors"
-              >
-                {isPlaying ? <Pause className="w-5 h-5 text-white" /> : <Play className="w-5 h-5 text-white" />}
-              </button>
               <button 
                 onClick={toggleFullscreen}
                 className="bg-white/10 hover:bg-white/20 p-3 rounded-full transition-colors"
@@ -126,6 +128,7 @@ const GamePlayer = ({ game, onBack }: GamePlayerProps) => {
                   onLoad={handleEmulatorLoad}
                   onError={handleEmulatorError}
                   isFullscreen={isFullscreen}
+                  onButtonPress={handleButtonPress}
                 />
                 {emulatorError && !isFullscreen && (
                   <div className="mt-4 p-4 bg-red-600/20 border border-red-500 rounded-lg text-white">
@@ -162,7 +165,11 @@ const GamePlayer = ({ game, onBack }: GamePlayerProps) => {
                 {/* Controles virtuais com transparência */}
                 <div className="absolute bottom-4 left-4 right-4 md:hidden">
                   <div className="bg-black/30 backdrop-blur-sm rounded-xl p-4">
-                    <VirtualControls gameConsole={game.console} isFullscreen={true} />
+                    <VirtualControls 
+                      gameConsole={game.console} 
+                      isFullscreen={true} 
+                      onButtonPress={handleButtonPress}
+                    />
                   </div>
                 </div>
               </>
@@ -177,7 +184,11 @@ const GamePlayer = ({ game, onBack }: GamePlayerProps) => {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <VirtualControls gameConsole={game.console} isFullscreen={false} />
+            <VirtualControls 
+              gameConsole={game.console} 
+              isFullscreen={false} 
+              onButtonPress={handleButtonPress}
+            />
           </motion.div>
         )}
       </div>
@@ -192,7 +203,7 @@ const GamePlayer = ({ game, onBack }: GamePlayerProps) => {
         >
           <div className="bg-black/20 backdrop-blur-md rounded-lg p-4 text-center border border-white/10">
             <div className="text-2xl font-bold text-blue-400">
-              {isEmulatorLoaded ? 'Real' : 'Off'}
+              {isEmulatorLoaded ? 'ON' : 'OFF'}
             </div>
             <div className="text-gray-400 text-sm">Emulador</div>
           </div>
@@ -206,7 +217,7 @@ const GamePlayer = ({ game, onBack }: GamePlayerProps) => {
           </div>
           <div className="bg-black/20 backdrop-blur-md rounded-lg p-4 text-center border border-white/10">
             <div className="text-2xl font-bold text-yellow-400">
-              {romInfo ? 'ROM' : 'N/A'}
+              {romInfo ? 'ATIVO' : 'N/A'}
             </div>
             <div className="text-gray-400 text-sm">Status</div>
           </div>

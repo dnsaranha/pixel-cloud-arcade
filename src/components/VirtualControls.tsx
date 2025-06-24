@@ -5,22 +5,44 @@ import { motion } from "framer-motion";
 interface VirtualControlsProps {
   gameConsole: string;
   isFullscreen?: boolean;
+  onButtonPress?: (button: string, pressed: boolean) => void;
 }
 
-const VirtualControls = ({ gameConsole, isFullscreen = false }: VirtualControlsProps) => {
+const VirtualControls = ({ gameConsole, isFullscreen = false, onButtonPress }: VirtualControlsProps) => {
   const [pressedButtons, setPressedButtons] = useState<Set<string>>(new Set());
 
   const handleButtonPress = (button: string) => {
     setPressedButtons(prev => new Set([...prev, button]));
     console.log(`Botão pressionado: ${button}`);
     
+    // Enviar comando para o emulador
+    onButtonPress?.(button, true);
+    
+    // Simular liberação do botão após um tempo
     setTimeout(() => {
       setPressedButtons(prev => {
         const newSet = new Set(prev);
         newSet.delete(button);
         return newSet;
       });
+      onButtonPress?.(button, false);
     }, 100);
+  };
+
+  const handleButtonDown = (button: string) => {
+    if (!pressedButtons.has(button)) {
+      setPressedButtons(prev => new Set([...prev, button]));
+      onButtonPress?.(button, true);
+    }
+  };
+
+  const handleButtonUp = (button: string) => {
+    setPressedButtons(prev => {
+      const newSet = new Set(prev);
+      newSet.delete(button);
+      return newSet;
+    });
+    onButtonPress?.(button, false);
   };
 
   const buttonStyle = (button: string) => {
@@ -50,26 +72,38 @@ const VirtualControls = ({ gameConsole, isFullscreen = false }: VirtualControlsP
         <div className="col-span-1 flex flex-col items-center justify-center">
           <div className="relative">
             <button
-              onClick={() => handleButtonPress('up')}
+              onMouseDown={() => handleButtonDown('up')}
+              onMouseUp={() => handleButtonUp('up')}
+              onTouchStart={() => handleButtonDown('up')}
+              onTouchEnd={() => handleButtonUp('up')}
               className={`${buttonStyle('up')} w-10 h-10 flex items-center justify-center text-white font-bold absolute -top-10 left-1/2 transform -translate-x-1/2`}
             >
               ↑
             </button>
             <button
-              onClick={() => handleButtonPress('left')}
+              onMouseDown={() => handleButtonDown('left')}
+              onMouseUp={() => handleButtonUp('left')}
+              onTouchStart={() => handleButtonDown('left')}
+              onTouchEnd={() => handleButtonUp('left')}
               className={`${buttonStyle('left')} w-10 h-10 flex items-center justify-center text-white font-bold absolute top-1/2 -left-10 transform -translate-y-1/2`}
             >
               ←
             </button>
             <div className="w-10 h-10 bg-slate-800 rounded-full"></div>
             <button
-              onClick={() => handleButtonPress('right')}
+              onMouseDown={() => handleButtonDown('right')}
+              onMouseUp={() => handleButtonUp('right')}
+              onTouchStart={() => handleButtonDown('right')}
+              onTouchEnd={() => handleButtonUp('right')}
               className={`${buttonStyle('right')} w-10 h-10 flex items-center justify-center text-white font-bold absolute top-1/2 -right-10 transform -translate-y-1/2`}
             >
               →
             </button>
             <button
-              onClick={() => handleButtonPress('down')}
+              onMouseDown={() => handleButtonDown('down')}
+              onMouseUp={() => handleButtonUp('down')}
+              onTouchStart={() => handleButtonDown('down')}
+              onTouchEnd={() => handleButtonUp('down')}
               className={`${buttonStyle('down')} w-10 h-10 flex items-center justify-center text-white font-bold absolute -bottom-10 left-1/2 transform -translate-x-1/2`}
             >
               ↓
@@ -97,13 +131,19 @@ const VirtualControls = ({ gameConsole, isFullscreen = false }: VirtualControlsP
         <div className="col-span-1 flex items-center justify-center">
           <div className="relative">
             <button
-              onClick={() => handleButtonPress('A')}
+              onMouseDown={() => handleButtonDown('A')}
+              onMouseUp={() => handleButtonUp('A')}
+              onTouchStart={() => handleButtonDown('A')}
+              onTouchEnd={() => handleButtonUp('A')}
               className={`${buttonStyle('A')} w-10 h-10 flex items-center justify-center text-white font-bold absolute top-1/2 -right-8 transform -translate-y-1/2`}
             >
               A
             </button>
             <button
-              onClick={() => handleButtonPress('B')}
+              onMouseDown={() => handleButtonDown('B')}
+              onMouseUp={() => handleButtonUp('B')}
+              onTouchStart={() => handleButtonDown('B')}
+              onTouchEnd={() => handleButtonUp('B')}
               className={`${buttonStyle('B')} w-10 h-10 flex items-center justify-center text-white font-bold absolute -bottom-8 left-1/2 transform -translate-x-1/2`}
             >
               B
