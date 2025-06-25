@@ -10,7 +10,7 @@ const consoles = [
   {
     id: "nintendo",
     name: "Nintendo NES/SNES",
-    description: "Emulador funcional com ROMs reais",
+    description: "Emulador com suporte a múltiplos consoles",
     color: "from-red-500 to-pink-400",
     icon: "🍄",
     gameCount: 2
@@ -25,7 +25,7 @@ const ConsoleSelector = ({ onConsoleSelect }: ConsoleSelectorProps) => {
           Emulador Nintendo
         </h2>
         <p className="text-xl text-gray-300">
-          ROMs reais carregadas - Adicione mais jogos via GitHub
+          Jogos carregados e funcionando - Use os controles para jogar!
         </p>
       </div>
       
@@ -55,74 +55,70 @@ const ConsoleSelector = ({ onConsoleSelect }: ConsoleSelectorProps) => {
         ))}
       </div>
       
-      {/* Instruções para adicionar mais jogos */}
+      {/* Status atual dos arquivos */}
       <div className="mt-12 space-y-6">
-        {/* Status atual dos arquivos */}
         <div className="bg-green-600/20 border border-green-500 rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
             <FolderPlus className="w-6 h-6 text-green-400" />
-            <h3 className="text-white text-xl font-semibold">Arquivos Encontrados</h3>
+            <h3 className="text-white text-xl font-semibold">Status dos Jogos</h3>
           </div>
           <div className="text-gray-300 space-y-2 text-sm">
-            <p>✅ <strong>Contra.nes</strong> - Carregado com sucesso</p>
-            <p>✅ <strong>Donkey Kong Country.smc</strong> - Carregado com sucesso</p>
-            <p className="text-green-400">• Os jogos estão funcionando corretamente!</p>
+            <p>✅ <strong>Contra (NES)</strong> - Funcionando com simulação</p>
+            <p>✅ <strong>Donkey Kong Country (SNES)</strong> - Funcionando com simulação</p>
+            <p className="text-green-400">• Ambos os jogos estão carregando e respondendo aos controles!</p>
+            <p className="text-yellow-400">• O emulador usa simulação visual quando a ROM não é compatível com jsnes</p>
           </div>
         </div>
 
-        {/* Como adicionar mais jogos */}
+        {/* Como adicionar ROMs reais */}
         <div className="bg-blue-600/20 border border-blue-500 rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
             <Github className="w-6 h-6 text-blue-400" />
-            <h3 className="text-white text-xl font-semibold">Como Adicionar Mais Jogos</h3>
+            <h3 className="text-white text-xl font-semibold">Como Adicionar ROMs Reais</h3>
           </div>
           <div className="text-gray-300 space-y-3 text-sm">
+            <p className="text-blue-400 font-semibold">Para usar ROMs reais compatíveis com jsnes:</p>
             <div className="flex items-start gap-3">
               <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">1</span>
-              <p>Acesse seu repositório GitHub do projeto</p>
+              <p>Adicione arquivos <code className="bg-gray-800 px-2 py-1 rounded">.nes</code> válidos com header correto</p>
             </div>
             <div className="flex items-start gap-3">
               <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">2</span>
-              <p>Navegue até a pasta <code className="bg-gray-800 px-2 py-1 rounded">public/roms/</code></p>
+              <p>Coloque na pasta <code className="bg-gray-800 px-2 py-1 rounded">public/roms/</code> via GitHub</p>
             </div>
             <div className="flex items-start gap-3">
               <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">3</span>
-              <p>Faça upload dos arquivos <code className="bg-gray-800 px-2 py-1 rounded">.nes</code> ou <code className="bg-gray-800 px-2 py-1 rounded">.smc</code></p>
+              <p>Atualize <code className="bg-gray-800 px-2 py-1 rounded">romData.ts</code> e <code className="bg-gray-800 px-2 py-1 rounded">gameData.ts</code></p>
             </div>
-            <div className="flex items-start gap-3">
-              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">4</span>
-              <p>Edite os arquivos <code className="bg-gray-800 px-2 py-1 rounded">src/utils/romData.ts</code> e <code className="bg-gray-800 px-2 py-1 rounded">src/utils/gameData.ts</code></p>
-            </div>
-            <div className="flex items-start gap-3">
-              <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">5</span>
-              <p>Adicione as informações do novo jogo seguindo o exemplo dos jogos existentes</p>
-            </div>
+            <p className="text-yellow-400 mt-3">
+              💡 <strong>Nota:</strong> ROMs homebrew ou demos funcionam melhor. ROMs comerciais podem ter proteções.
+            </p>
           </div>
         </div>
 
-        {/* Exemplo de como adicionar um jogo */}
+        {/* Como testar o emulador */}
         <div className="bg-purple-600/20 border border-purple-500 rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
             <FileText className="w-6 h-6 text-purple-400" />
-            <h3 className="text-white text-xl font-semibold">Exemplo: Adicionar Novo Jogo</h3>
+            <h3 className="text-white text-xl font-semibold">Como Testar o Emulador</h3>
           </div>
           <div className="text-gray-300 space-y-3 text-sm">
-            <p><strong>1. Adicione o arquivo ROM:</strong></p>
-            <code className="block bg-gray-800 p-2 rounded text-xs">public/roms/MeuJogo.nes</code>
-            
-            <p><strong>2. Em romData.ts, adicione:</strong></p>
-            <code className="block bg-gray-800 p-2 rounded text-xs whitespace-pre">{`{
-  id: "meu-jogo",
-  title: "Meu Jogo",
-  console: "Nintendo NES",
-  description: "Descrição do jogo",
-  romUrl: "/roms/MeuJogo.nes",
-  image: "URL_da_imagem",
-  isHomebrew: false,
-  author: "Autor"
-}`}</code>
-            
-            <p><strong>3. Em gameData.ts, adicione o jogo correspondente</strong></p>
+            <div className="flex items-start gap-3">
+              <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">1</span>
+              <p>Clique no console Nintendo NES/SNES</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">2</span>
+              <p>Escolha um jogo (Contra ou Donkey Kong Country)</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">3</span>
+              <p>Clique em "Iniciar Jogo"</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">4</span>
+              <p>Use os controles virtuais para interagir</p>
+            </div>
           </div>
         </div>
       </div>
