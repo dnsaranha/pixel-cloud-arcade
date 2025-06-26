@@ -16,7 +16,9 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false, onButtonP
   const [isLoaded, setIsLoaded] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>("");
   const animationRef = useRef<number>();
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -25,11 +27,9 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false, onButtonP
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Configurar canvas
     canvas.width = 256;
     canvas.height = 240;
 
-    // Simular carregamento da ROM
     if (romUrl) {
       loadROM(romUrl);
     }
@@ -38,142 +38,102 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false, onButtonP
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
+      if (audioContextRef.current) {
+        audioContextRef.current.close();
+      }
     };
   }, [romUrl]);
+
+  const initAudioContext = () => {
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+  };
 
   const loadROM = async (url: string) => {
     try {
       setError(null);
-      console.log(`Carregando ROM: ${url}`);
+      setDebugInfo(`Carregando ROM: ${url}`);
+      console.log(`Tentando carregar ROM: ${url}`);
       
-      // Verificar se é arquivo .nes (Nintendo) ou .smc (Super Nintendo)
-      const isNES = url.toLowerCase().includes('.nes');
-      const isSNES = url.toLowerCase().includes('.smc');
-      
-      if (!isNES && !isSNES) {
-        throw new Error('Formato de ROM não suportado. Use arquivos .nes ou .smc');
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`ROM não encontrada: ${response.status}`);
       }
-
-      // Para arquivos .smc (Super Nintendo), mostrar que não é suportado pelo jsnes
-      if (isSNES) {
-        console.log('Arquivo Super Nintendo detectado - simulando jogo');
-        showGameSimulation();
+      
+      const romData = await response.arrayBuffer();
+      const romArray = new Uint8Array(romData);
+      
+      console.log(`ROM carregada. Tamanho: ${romArray.length} bytes`);
+      setDebugInfo(`ROM carregada: ${romArray.length} bytes`);
+      
+      // Verificar se é arquivo Super Nintendo (.smc)
+      if (url.toLowerCase().includes('.smc')) {
+        console.log('Arquivo Super Nintendo detectado - jsnes não suporta SNES');
+        setDebugInfo('Arquivo SNES - jsnes só suporta NES');
+        showGameSimulation('SNES não suportado pelo jsnes');
         setIsLoaded(true);
         onLoad?.();
         return;
       }
 
-      // Tentar carregar ROM NES real
-      try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error(`ROM não encontrada: ${url}`);
-        }
-        
-        const romData = await response.arrayBuffer();
-        const romArray = new Uint8Array(romData);
-        
-        // Verificar se o arquivo tem o header NES correto
-        if (romArray.length < 16 || 
-            romArray[0] !== 0x4E || // 'N'
-            romArray[1] !== 0x45 || // 'E' 
-            romArray[2] !== 0x53 || // 'S'
-            romArray[3] !== 0x1A) { // EOF
-          console.log('Arquivo não tem header NES válido - simulando jogo');
-          showGameSimulation();
-          setIsLoaded(true);
-          onLoad?.();
-          return;
-        }
-
-        // Inicializar o emulador NES
-        nesRef.current = new NES({
-          onFrame: (frameBuffer: number[]) => {
-            drawFrame(frameBuffer);
-          },
-          onAudioSample: (left: number, right: number) => {
-            // Implementar áudio se necessário
-          },
-          onStatusUpdate: (status: string) => {
-            console.log('NES Status:', status);
-          }
-        });
-
-        // Carregar a ROM
-        nesRef.current.loadROM(romArray);
-        
-        console.log(`ROM carregada com sucesso: ${url}`);
-        setIsLoaded(true);
-        onLoad?.();
-        
-      } catch (nesError) {
-        console.log('Erro ao carregar com jsnes, simulando jogo:', nesError);
-        showGameSimulation();
-        setIsLoaded(true);
-        onLoad?.();
+      // Validação mais robusta para ROMs NES
+      if (romArray.length < 16) {
+        throw new Error('Arquivo muito pequeno para ser uma ROM NES válida');
       }
+
+      // Verificar header NES
+      const hasNESHeader = romArray[0] === 0x4E && // 'N'
+                          romArray[1] === 0x45 && // 'E'
+                          romArray[2] === 0x53 && // 'S'
+                          romArray[3] === 0x1A;   // EOF
+
+      console.log(`Header NES válido: ${hasNESHeader}`);
+      console.log(`Primeiros 16 bytes:`, Array.from(romArray.slice(0, 16)).map(b => `0x${b.toString(16).padStart(2, '0')}`).join(' '));
+      
+      if (!hasNESHeader) {
+        console.log('Header NES inválido - tentando mesmo assim');
+        setDebugInfo('Header NES inválido - tentando carregar mesmo assim');
+      }
+
+      // Inicializar contexto de áudio
+      initAudioContext();
+
+      // Criar nova instância do emulador NES
+      console.log('Inicializando jsnes...');
+      nesRef.current = new NES({
+        onFrame: (frameBuffer: number[]) => {
+          drawFrame(frameBuffer);
+        },
+        onAudioSample: (left: number, right: number) => {
+          // Implementar áudio básico se necessário
+        },
+        onStatusUpdate: (status: string) => {
+          console.log('NES Status:', status);
+          setDebugInfo(`Status: ${status}`);
+        }
+      });
+
+      // Tentar carregar a ROM
+      console.log('Carregando ROM no jsnes...');
+      nesRef.current.loadROM(romArray);
+      
+      console.log('ROM carregada com sucesso no jsnes!');
+      setDebugInfo('ROM carregada com sucesso no jsnes');
+      setIsLoaded(true);
+      onLoad?.();
       
     } catch (error) {
       console.error('Erro ao carregar ROM:', error);
-      const errorMessage = `Erro: ${error}`;
+      const errorMessage = `Erro ao carregar ROM: ${error}`;
       setError(errorMessage);
+      setDebugInfo(errorMessage);
       onError?.(errorMessage);
-      showErrorScreen();
-    }
-  };
-
-  const showGameSimulation = () => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
-    if (!ctx || !canvas) return;
-
-    // Criar uma tela de jogo simulada
-    ctx.fillStyle = '#000080';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Adicionar alguns elementos gráficos simulados
-    ctx.fillStyle = '#00FF00';
-    ctx.fillRect(50, 50, 20, 20); // Quadrado verde
-    
-    ctx.fillStyle = '#FF0000';
-    ctx.fillRect(180, 180, 20, 20); // Quadrado vermelho
-    
-    ctx.fillStyle = '#FFFF00';
-    ctx.font = '16px monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('JOGO ATIVO', canvas.width / 2, canvas.height / 2 - 20);
-    ctx.fillText('Use os controles!', canvas.width / 2, canvas.height / 2 + 10);
-    
-    // Simular movimento
-    let frame = 0;
-    const animate = () => {
-      if (!isRunning) return;
       
-      frame++;
-      ctx.fillStyle = '#000080';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      
-      // Elementos que se movem
-      const x = 50 + Math.sin(frame * 0.1) * 30;
-      const y = 50 + Math.cos(frame * 0.1) * 30;
-      
-      ctx.fillStyle = '#00FF00';
-      ctx.fillRect(x, y, 20, 20);
-      
-      ctx.fillStyle = '#FF0000';
-      ctx.fillRect(180, 180, 20, 20);
-      
-      ctx.fillStyle = '#FFFF00';
-      ctx.font = '16px monospace';
-      ctx.textAlign = 'center';
-      ctx.fillText('JOGO ATIVO', canvas.width / 2, canvas.height / 2 - 20);
-      ctx.fillText(`Frame: ${frame}`, canvas.width / 2, canvas.height / 2 + 10);
-      
-      animationRef.current = requestAnimationFrame(animate);
-    };
-    
-    if (isRunning) {
-      animate();
+      // Mostrar simulação como fallback
+      showGameSimulation(`Erro: ${error}`);
+      setIsLoaded(true);
+      onLoad?.();
     }
   };
 
@@ -199,39 +159,87 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false, onButtonP
     ctx.putImageData(imageData, 0, 0);
   };
 
-  const showErrorScreen = () => {
+  const showGameSimulation = (reason: string) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!ctx || !canvas) return;
 
-    ctx.fillStyle = '#2a0a0a';
+    console.log(`Mostrando simulação: ${reason}`);
+
+    ctx.fillStyle = '#000080';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    ctx.fillStyle = '#ff4444';
-    ctx.font = '16px monospace';
+    ctx.fillStyle = '#FFFF00';
+    ctx.font = '14px monospace';
     ctx.textAlign = 'center';
-    ctx.fillText('ROM NÃO ENCONTRADA', canvas.width / 2, canvas.height / 2 - 20);
-    ctx.fillText('Verifique os arquivos', canvas.width / 2, canvas.height / 2 + 10);
+    ctx.fillText('SIMULAÇÃO ATIVA', canvas.width / 2, canvas.height / 2 - 40);
+    ctx.fillText(reason, canvas.width / 2, canvas.height / 2 - 20);
+    ctx.fillText('Use os controles!', canvas.width / 2, canvas.height / 2);
+    
+    ctx.fillStyle = '#00FF00';
+    ctx.fillRect(50, 50, 20, 20);
+    
+    ctx.fillStyle = '#FF0000';
+    ctx.fillRect(180, 180, 20, 20);
+    
+    let frame = 0;
+    const animate = () => {
+      if (!isRunning) return;
+      
+      frame++;
+      ctx.fillStyle = '#000080';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      const x = 50 + Math.sin(frame * 0.1) * 30;
+      const y = 50 + Math.cos(frame * 0.1) * 30;
+      
+      ctx.fillStyle = '#00FF00';
+      ctx.fillRect(x, y, 20, 20);
+      
+      ctx.fillStyle = '#FF0000';
+      ctx.fillRect(180, 180, 20, 20);
+      
+      ctx.fillStyle = '#FFFF00';
+      ctx.font = '12px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('SIMULAÇÃO', canvas.width / 2, canvas.height / 2 - 20);
+      ctx.fillText(`Frame: ${frame}`, canvas.width / 2, canvas.height / 2);
+      
+      animationRef.current = requestAnimationFrame(animate);
+    };
+    
+    if (isRunning) {
+      animate();
+    }
   };
 
   const startEmulation = () => {
     if (!isLoaded) return;
     
     setIsRunning(true);
-    console.log('Emulação iniciada');
+    console.log('Iniciando emulação...');
     
     if (nesRef.current) {
-      // Usar emulador real
+      console.log('Usando emulador jsnes real');
+      setDebugInfo('Emulador jsnes iniciado');
+      
       const gameLoop = () => {
         if (nesRef.current && isRunning) {
-          nesRef.current.frame();
-          animationRef.current = requestAnimationFrame(gameLoop);
+          try {
+            nesRef.current.frame();
+            animationRef.current = requestAnimationFrame(gameLoop);
+          } catch (error) {
+            console.error('Erro no loop do jogo:', error);
+            setError(`Erro na execução: ${error}`);
+            setIsRunning(false);
+          }
         }
       };
       gameLoop();
     } else {
-      // Usar simulação
-      showGameSimulation();
+      console.log('Usando simulação');
+      setDebugInfo('Usando simulação visual');
+      showGameSimulation('jsnes não inicializado');
     }
   };
 
@@ -241,10 +249,12 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false, onButtonP
       cancelAnimationFrame(animationRef.current);
     }
     console.log('Emulação pausada');
+    setDebugInfo('Emulação pausada');
   };
 
-  // Função para processar entrada dos controles
   const handleButtonPress = (button: string, pressed: boolean) => {
+    console.log(`Botão ${button} ${pressed ? 'pressionado' : 'solto'}`);
+    
     if (nesRef.current) {
       const buttonMap: { [key: string]: number } = {
         'A': 0,
@@ -259,21 +269,23 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false, onButtonP
 
       const buttonId = buttonMap[button];
       if (buttonId !== undefined) {
-        if (pressed) {
-          nesRef.current.buttonDown(1, buttonId);
-        } else {
-          nesRef.current.buttonUp(1, buttonId);
+        try {
+          if (pressed) {
+            nesRef.current.buttonDown(1, buttonId);
+            console.log(`jsnes: Botão ${button} (${buttonId}) pressionado`);
+          } else {
+            nesRef.current.buttonUp(1, buttonId);
+            console.log(`jsnes: Botão ${button} (${buttonId}) solto`);
+          }
+        } catch (error) {
+          console.error('Erro ao enviar comando para jsnes:', error);
         }
       }
-    } else {
-      // Para simulação, apenas logar
-      console.log(`Botão ${button} ${pressed ? 'pressionado' : 'solto'}`);
     }
 
     onButtonPress?.(button, pressed);
   };
 
-  // Expor a função para o componente pai
   useEffect(() => {
     if (onButtonPress) {
       (window as any).handleNESButtonPress = handleButtonPress;
@@ -301,11 +313,18 @@ const RealEmulator = ({ romUrl, onLoad, onError, isFullscreen = false, onButtonP
             </div>
           )}
           
+          {debugInfo && (
+            <div className="text-center text-white bg-blue-600/20 p-4 rounded-lg border border-blue-500 max-w-md">
+              <h3 className="font-semibold mb-2">Debug Info</h3>
+              <p className="text-xs font-mono">{debugInfo}</p>
+            </div>
+          )}
+          
           {!error && isLoaded && (
             <div className="text-center text-white bg-green-600/20 p-4 rounded-lg border border-green-500">
-              <h3 className="font-semibold mb-2">Jogo Carregado!</h3>
+              <h3 className="font-semibold mb-2">Emulador Pronto!</h3>
               <div className="text-sm space-y-1">
-                <p>• ROM carregada com sucesso</p>
+                <p>• {nesRef.current ? 'jsnes carregado' : 'Simulação ativa'}</p>
                 <p>• Use os controles para jogar</p>
                 <p>• Pressione Iniciar para começar</p>
               </div>
